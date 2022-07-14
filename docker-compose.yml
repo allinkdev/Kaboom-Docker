@@ -1,0 +1,25 @@
+version: "3"
+
+services:
+  proxy:
+    build: 
+      context: velocity/
+    cap_drop:
+      - ALL
+    restart: always
+    ports:
+      - "25565:25565/tcp"
+      - "25565:25565/udp"
+
+  kaboom:
+    build:
+      context: kaboom/
+    depends_on:
+      - proxy
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /server/plugins/Geyser/locale
+    volumes:
+      - ./logs/:/server/logs:rw # Allow logs to be viewed - optional, but recommended
+    restart: always # Automatically restarts the server if it crashes/stops
