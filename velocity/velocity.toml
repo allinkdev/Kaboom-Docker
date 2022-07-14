@@ -1,3 +1,4 @@
+config-version = "2"
 bind = "0.0.0.0:25565"
 motd = ""
 show-max-players = 0
@@ -5,6 +6,7 @@ online-mode = false
 player-info-forwarding-mode = "NONE"
 announce-forge = false
 force-key-authentication = false
+forwarding-secret-file = "forwarding-secret"
 
 [servers]
 kaboom = "kaboom:25565"
@@ -20,6 +22,8 @@ login-ratelimit = 5000
 connection-timeout = 5000
 read-timeout = 30000
 proxy-protocol = false
+tcp-fast-open = true
+announce-proxy-commands	= false
 
 [query]
 enabled = false

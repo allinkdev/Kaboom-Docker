@@ -6,8 +6,11 @@ services:
       context: velocity/
     cap_drop:
       - ALL
+    tmpfs:
+      - /server/plugins/geyser/locale
     restart: always
     ports:
+      - "19132:19132/udp"
       - "25565:25565/tcp"
       - "25565:25565/udp"
 
@@ -18,8 +21,6 @@ services:
       - proxy
     cap_drop:
       - ALL
-    tmpfs:
-      - /server/plugins/Geyser/locale
     volumes:
       - ./logs/:/server/logs:rw # Allow logs to be viewed - optional, but recommended
     restart: always # Automatically restarts the server if it crashes/stops

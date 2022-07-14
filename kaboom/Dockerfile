@@ -16,6 +16,24 @@ WORKDIR /patcher/
 COPY --from=scissors-builder /build/Scissors/build/libs/*paperclip*.jar /patcher/paperclip.jar
 RUN java -Dpaperclip.patchonly=true -jar paperclip.jar
 
+FROM eclipse-temurin:17-jdk-alpine as essentials-builder
+RUN apk --no-cache add git
+
+WORKDIR /build/
+RUN git clone https://github.com/EssentialsX/Essentials/ -b "2.x" --depth=1
+
+WORKDIR /build/Essentials/
+RUN ./gradlew --no-daemon EssentialsX:shadowJar
+
+FROM eclipse-temurin:17-jdk-alpine as fawe-builder
+RUN apk --no-cache add git
+
+WORKDIR /build/
+RUN git clone https://github.com/IntellectualSites/FastAsyncWorldEdit.git --depth=1
+
+WORKDIR /build/FastAsyncWorldEdit
+RUN ./gradlew --no-daemon build --stacktrace --info
+
 # Via still build with Java 8, for backwards compatibility with older servers
 FROM eclipse-temurin:8-jdk-alpine as viaversion-builder
 RUN apk --no-cache add git
@@ -46,35 +64,6 @@ RUN git clone https://github.com/ViaVersion/ViaRewind.git --depth=1
 WORKDIR /build/ViaRewind
 RUN mvn package
 RUN rm -rfv all/target/original*.jar
-
-FROM eclipse-temurin:17-jdk-alpine as essentials-builder
-RUN apk --no-cache add git
-
-WORKDIR /build/
-RUN git clone https://github.com/EssentialsX/Essentials/ -b "2.x" --depth=1
-
-WORKDIR /build/Essentials/
-RUN ./gradlew --no-daemon EssentialsX:shadowJar
-
-FROM eclipse-temurin:17-jdk-alpine as fawe-builder
-RUN apk --no-cache add git
-
-WORKDIR /build/
-RUN git clone https://github.com/IntellectualSites/FastAsyncWorldEdit.git --depth=1
-
-WORKDIR /build/FastAsyncWorldEdit
-RUN ./gradlew --no-daemon build --stacktrace --info
-
-FROM alpine as geyser-builder
-RUN apk --no-cache add git maven
-
-WORKDIR /build/
-RUN git clone https://github.com/GeyserMC/Geyser.git --depth=1
-
-WORKDIR /build/Geyser
-RUN git submodule update --init
-RUN mvn -B package
-RUN rm -rf bootstrap/spigot/target/original*
 
 FROM alpine as kaboom-builder
 RUN apk --no-cache add git maven
@@ -108,7 +97,6 @@ RUN apk --no-cache add git
 WORKDIR /build/
 RUN git clone https://github.com/kaboomserver/server.git --depth=1
 
-
 FROM alpine as server-builder
 
 WORKDIR /server/
@@ -127,13 +115,14 @@ WORKDIR /server/plugins
 # We want to copy the official configurations
 COPY --chown=nonroot:nonroot --from=kaboom-server-repo /build/server/plugins/ /server/plugins/
 
+# This is ran on the proxy to prevent IP leaks
+RUN rm -rf Geyser.jar
+
 COPY --from=viaversion-builder /build/ViaVersion/build/libs/*.jar ViaVersion.jar
 COPY --from=viabackwards-builder /build/ViaBackwards/build/libs/*.jar ViaBackwards.jar
 COPY --from=viarewind-builder /build/ViaRewind/all/target/*.jar ViaRewind.jar
 
 COPY --from=essentials-builder /build/Essentials/Essentials/build/libs/*.jar Essentials.jar
-
-COPY --from=geyser-builder /build/Geyser/bootstrap/spigot/target/*.jar Geyser.jar
 
 COPY --from=fawe-builder /build/FastAsyncWorldEdit/worldedit-bukkit/build/libs/FastAsyncWorldEdit*.jar FastAsyncWorldEdit.jar
 
